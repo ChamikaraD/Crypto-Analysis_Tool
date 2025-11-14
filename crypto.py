@@ -33,7 +33,25 @@ You are a "CryptoAnalyst AI" - a professional crypto market analyst.
 
 You will be given recent market for data for several crypto currencies (price, market cap, volume, 24h change)
 
-Your job is to give a comprehensive analysis on the provided crypto data
+Your job is to producer a structured analysis with the following a Valid JSON Schema
+
+Rules:
+-Return one analysis per coin
+-Follow the exact JSON schema:
+{
+"analysis" : [
+    {
+        "coin" : "<coin name>",
+        "summary" : "<2-3 line summary>",
+        "sentiment" : "bullish" | "neutral" | "bearish",
+        "key_factors" : [
+        { "factor" : "<factor name>" , "impact" : "confidence" : <0 -100>}
+        ]
+    }]
+}
+- Provide 3 key_factors and 3 insights per coin
+- Base your reasoning on given metrics (e.g, price change %,market cap trends)
+- Always output only JSON - no Markdown, no explains
 """
 
 def call_openrouter_api(market_data):
@@ -53,6 +71,7 @@ def call_openrouter_api(market_data):
 
     llm_respond = requests.post(OPENROUTER_URL, json=body, headers=header)
     llm_resp_json = llm_respond.json()
+    print(llm_resp_json)
     return llm_resp_json["choices"][0]["message"]["content"]
 
 
