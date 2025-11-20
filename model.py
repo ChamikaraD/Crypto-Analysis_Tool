@@ -6,6 +6,20 @@ from pydantic import BaseModel ,Field
 class CryptoAnalysisRequests(BaseModel):
     coins :List[str] = Field(...,description ="Provide the list of coins to be analysed")
 
+
+
+class CryptoCompareRequest(CryptoAnalysisRequests):
+    pass
+
+class CryptoComparison(BaseModel):
+    winner: str
+    summary: str
+    reasons: List[str]
+
+class CryptoComparisonResponse(BaseModel):
+    comparison:List[CryptoComparison]
+
+
 class MarketFactor(BaseModel):
     factor :str
     impact :str
@@ -23,16 +37,5 @@ class CoinMarketAnalysis(BaseModel):
 
 class CryptoAnalysisResponse(BaseModel):
     analysis : List[CoinMarketAnalysis]
-
-class CryptoCompareRequest(CryptoAnalysisRequests):
-    pass
-
-class CryptoComparison(BaseModel):
-    winner: str
-    summary: str
-    reasons: List[str]
-
-class CryptoComparisonResponse(BaseModel):
-    comparison:CryptoComparison
 
 
