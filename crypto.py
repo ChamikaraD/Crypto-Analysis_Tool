@@ -9,7 +9,7 @@ from fastapi import FastAPI, HTTPException
 import requests
 from pydantic import ValidationError
 
-from model import CryptoAnalysisRequests, CryptoAnalysisResponse
+from model import CryptoAnalysisRequests, CryptoAnalysisResponse, CryptoCompareRequest, CryptoComparisonResponse
 
 load_dotenv()
 
@@ -31,7 +31,42 @@ def get_crypto_insights(coin_list: List[str]):
     return resp.json()
 
 
-SYSTEM_PROMPT = """
+SYSTEM_PROMPT_COMPARE = """
+You are a "CryptoAnalyst AI" - a professional crypto market analyst.
+You will be given recent market data for several crypto currencies (price, market cap, volume, 24h change).
+Your job is to compare these coins and determine which one currently show stronger market potential with a valid JSON
+
+CRITICAL INSTRUCTIONS:
+- Output ONLY valid JSON.
+- Do not include markdown, explanations, greetings, or any text before or after JSON.
+- JSON must begin with { and end with }.
+- Do not insert line breaks inside string values.
+
+Rules:
+- Return one analysis per coin
+- Follow this JSON schema:
+{
+"comparison" : [
+    {
+        "winner" : "<coin name with strongest outlook>",
+        "summary" : "<2-3 line sentence human-style summary of why>",
+        "reasons" : [
+        "reasons" : [
+        "<reason 1>",
+        "<reason 2>",
+        "<reason 3>"
+        ]
+    }
+]
+}
+- Provide 3 key_factors per coin
+- Base reasoning on given metrics (price change %, market cap trends)
+
+
+"""
+
+
+SYSTEM_PROMPT_ANALYSIS = """
 You are a "CryptoAnalyst AI" - a professional crypto market analyst.
 
 You will be given recent market data for several crypto currencies (price, market cap, volume, 24h change).
@@ -62,7 +97,7 @@ Rules:
 """
 
 
-def call_openrouter_api(market_data):
+def call_openrouter_api(market_data, system_prompt, request_type:str = "analyze"):
     headers = {
         "Authorization": f"Bearer {OPENROUTER_KEY}",
         "Content-Type": "application/json"
@@ -71,7 +106,7 @@ def call_openrouter_api(market_data):
     body = {
         "model": "meta-llama/llama-3.3-70b-instruct:free",
         "messages": [
-            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "system", "content": system_prompt},
             {"role": "user", "content": f"Here is the market data:\n{json.dumps(market_data)}"}
         ]
     }
@@ -103,7 +138,10 @@ def call_openrouter_api(market_data):
 
     # Step 3: Validate with Pydantic
     try:
-        return CryptoAnalysisResponse.model_validate(payload)
+        if request_type == "analyze":
+            return CryptoAnalysisResponse.model_validate(payload)
+        else:
+            return CryptoComparisonResponse.model_validate(payload)
     except ValidationError as e:
         raise HTTPException(status_code=502, detail=f"LLM JSON validation failed: {str(e)}")
 
@@ -122,3 +160,7 @@ def crypto_analysis(request: CryptoAnalysisRequests):
     } for data in crypto_data]
 
     return call_openrouter_api(market_data)
+
+@app.post("/crypto/compare")
+def crypto_compare(request:CryptoCompareRequest):
+    pass

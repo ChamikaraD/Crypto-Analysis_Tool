@@ -23,3 +23,16 @@ class CoinMarketAnalysis(BaseModel):
 
 class CryptoAnalysisResponse(BaseModel):
     analysis : List[CoinMarketAnalysis]
+
+class CryptoCompareRequest(CryptoAnalysisRequests):
+    pass
+
+class CryptoComparison(BaseModel):
+    winner: str
+    summary: str
+    reasons: List[str]
+
+class CryptoComparisonResponse(BaseModel):
+    comparison:CryptoComparison
+
+
